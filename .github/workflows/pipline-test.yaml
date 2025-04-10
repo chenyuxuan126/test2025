@@ -3,65 +3,11 @@ on:
   push:
     branches:
       - main
-env:
-  REPOSITORY: ${{ gitea.repository }}
-  REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
-  REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-  MAVEN_GITEA_TOKEN: ${{ secrets.MAVEN_GITEA_TOKEN }}
-  SKYWALKING_COLLECTOR_SERVICE: middleware.in.yimaogo.com:11800
-  APP_NAME: yimaogo-store-api
-  SERVICE_PORT: 8082
-  APP_VERSION: ${{ gitea.run_id }}
-  TENCENT_LOAD_BALANCE_ID: lb-42s8ptpe
-  ACTIVE_PROFILE: test
-  NAMESPACE: yimaogo
 
 jobs:
   build:
     name: 构建
     runs-on: yimaogo
-    container:
-      image: registry.yimaogo.com/yimaogo/maven:3.9.6-eclipse-temurin-21-alpine-nodejs
-      credentials:
-        username: ${{ env.REGISTRY_USERNAME }}
-        password: ${{ env.REGISTRY_PASSWORD }}
     steps:
       - name: 拉取代码
-        uses: https://${{ secrets.REGISTRY_USERNAME }}:${{ secrets.REGISTRY_PASSWORD }}@git.yimaogo.com/yimaogo/checkout@v4
-      - name: 加载依赖
-        uses: https://${{ secrets.REGISTRY_USERNAME }}:${{ secrets.REGISTRY_PASSWORD }}@git.yimaogo.com/yimaogo/cache/restore@v4
-        with:
-          key: cache-${{ env.APP_NAME }}-${{ hashFiles('pom.xml') }}
-          path: ./.m2/repository
-      - name: 构建镜像并推送
-        run: mvn clean compile jib:build -s ./.m2/settings.xml -Dmaven.test.skip=true -Dmaven.repo.local=./.m2/repository --batch-mode
-      - name: 缓存依赖
-        uses: https://${{ secrets.REGISTRY_USERNAME }}:${{ secrets.REGISTRY_PASSWORD }}@git.yimaogo.com/yimaogo/cache/save@v4
-        with:
-          key: cache-${{ env.APP_NAME }}-${{ hashFiles('pom.xml') }}
-          path: ./.m2/repository
-
-  deploy:
-    name: 部署
-    runs-on: yimaogo
-    container:
-      image: registry.yimaogo.com/yimaogo/kubectl-tencent-dev:alpine-3.19
-      credentials:
-        username: ${{ env.REGISTRY_USERNAME }}
-        password: ${{ env.REGISTRY_PASSWORD }}
-    needs: build
-    steps:
-      - name: 拉取代码
-        uses: https://${{ secrets.REGISTRY_USERNAME }}:${{ secrets.REGISTRY_PASSWORD }}@git.yimaogo.com/yimaogo/checkout@v4
-      - name: 配置App name
-        run: sed -i "s/APP_NAME/${{ env.APP_NAME }}/g" kubernetes.yaml
-      - name: 配置命名空间
-        run: sed -i "s/NAMESPACE/${{ env.NAMESPACE }}/g" kubernetes.yaml
-      - name: 配置App version
-        run: sed -i "s/APP_VERSION/${{ env.APP_VERSION }}/g" kubernetes.yaml
-      - name: 配置服务端口
-        run: sed -i "s/SERVICE_PORT/${{ env.SERVICE_PORT }}/g" kubernetes.yaml
-#      - name: 配置负载均衡器ID
-#        run: sed -i "s/TENCENT_LOAD_BALANCE_ID/${{ env.TENCENT_LOAD_BALANCE_ID }}/g" kubernetes.yaml
-      - name: 部署到Kubernetes
-        run: kubectl apply -f kubernetes.yaml
+        uses: ls
